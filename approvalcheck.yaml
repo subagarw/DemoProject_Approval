@@ -1,0 +1,38 @@
+---
+
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    prod_region: ap-southeast-2
+    prod_tag: SITServer
+  
+  tasks:
+  
+  - name: Check for SIT server
+    ec2_remote_facts:
+      region: "{{ prod_region }}"
+      filters:
+        instance-state-name: running
+        "tag:Name": "{{ prod_tag }}"
+    register: ec2info
+    
+  - name: create the file
+    file:
+      path: /ext/jenkins_home/workspace/Validating_Approval/approvalstatus
+      state: touch
+      owner: root
+      group: root
+      mode: 0777
+
+  - name: checking if successful
+    shell: echo success > approvalstatus
+    when: ec2info.instances[0] is defined
+    
+  - name: checking if failed
+    shell: echo fail > approvalstatus
+    when: ec2info.instances[0] is not defined
+    
+  
+  
